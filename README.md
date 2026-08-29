@@ -1,6 +1,6 @@
 # OviZero Risk Intelligence
 
-A judge-facing prototype for OviZero's block-level Aedes risk intelligence workflow. The interface is designed for rapid scanning: one dominant risk score, one plain-language conclusion, clear reason codes, and one next action.
+A responsive operations dashboard for OviZero's block-level Aedes risk intelligence workflow. The interface combines rapid scanning with an interactive risk map, dense node diagnostics, priority zones, and targeted fogging operations.
 
 ## Run locally
 
@@ -21,7 +21,3 @@ Open `http://localhost:3000`.
 4. Open the **Actions** tab and run **Deploy OviZero to GitHub Pages**, or push another commit to `main`.
 
 The included workflow installs dependencies, creates the static export, and publishes it automatically. It also configures the correct base path for project repositories such as `username.github.io/ovizero`.
-
-## Important prototype note
-
-Displayed risk values and weightings are illustrative. The interface does not represent a validated public-health alert or a deployed OviZero model.
