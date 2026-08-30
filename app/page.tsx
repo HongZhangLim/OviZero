@@ -1,53 +1,11 @@
 "use client";
 
-import { PointerEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import OviZeroRiskMap from "@/components/OviZeroRiskMap";
+import { pilotNodes as nodes, type NodeData, type Risk } from "@/lib/pilot-data";
 
 type Page = "overview" | "map" | "zones" | "devices";
-type Risk = "Critical" | "High" | "Elevated" | "Watch";
 type DispatchState = "Recommended" | "Scheduled" | "Dispatched" | "Verify impact";
-
-type NodeData = {
-  id: string;
-  location: string;
-  score: number;
-  risk: Risk;
-  eggs: number;
-  growth: number;
-  temp: number;
-  humidity: number;
-  battery: number;
-  signal: "Strong" | "Medium" | "Weak";
-  x: number;
-  y: number;
-};
-
-const locations = [
-  "North residential block", "Market drain corridor", "Community courtyard",
-  "School perimeter", "Riverside apartments", "Transit plaza",
-  "Community park", "South residential block", "Sports complex", "Market square",
-];
-
-const nodes: NodeData[] = Array.from({ length: 100 }, (_, i) => {
-  const row = Math.floor(i / 10);
-  const column = i % 10;
-  const seeded = [91, 87, 82, 78, 74, 69, 63, 58, 52, 46][i % 10];
-  const score = Math.max(38, Math.min(94, seeded - Math.floor(row * 1.3) + ((i * 7) % 9)));
-  const risk: Risk = score >= 85 ? "Critical" : score >= 70 ? "High" : score >= 55 ? "Elevated" : "Watch";
-  return {
-    id: `OZ-${String(i + 1).padStart(3, "0")}`,
-    location: locations[(i + row * 3) % locations.length],
-    score,
-    risk,
-    eggs: 32 + ((i * 19) % 104),
-    growth: 4 + ((i * 11) % 38),
-    temp: 29.2 + ((i * 7) % 31) / 10,
-    humidity: 67 + ((i * 13) % 24),
-    battery: 28 + ((i * 17) % 70),
-    signal: i % 13 === 0 ? "Weak" : i % 5 === 0 ? "Medium" : "Strong",
-    x: 7 + column * 9.4 + (row % 2) * 1.3,
-    y: 7 + row * 9.3,
-  };
-});
 
 const topZones = nodes.slice().sort((a, b) => b.score - a.score).slice(0, 6);
 
@@ -71,9 +29,6 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState("OZ-001");
   const [riskFilter, setRiskFilter] = useState<"All" | Risk>("All");
   const [mapMode, setMapMode] = useState<"Risk" | "Network">("Risk");
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const [deviceQuery, setDeviceQuery] = useState("");
   const [dispatch, setDispatch] = useState<Record<string, DispatchState>>({});
   const [toast, setToast] = useState("");
@@ -119,11 +74,6 @@ export default function Home() {
     showToast("Network data exported");
   };
 
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!dragOrigin) return;
-    setOffset({ x: dragOrigin.ox + event.clientX - dragOrigin.x, y: dragOrigin.oy + event.clientY - dragOrigin.y });
-  };
-
   return (
     <div className="product-shell">
       <aside className="sidebar">
@@ -137,10 +87,10 @@ export default function Home() {
           <MenuButton label="Device network" icon="04" active={page === "devices"} onClick={() => navigate("devices")} />
         </nav>
         <div className="coverage-card">
-          <span className="coverage-icon">100m</span>
-          <div><strong>Dense coverage</strong><small>One node every 100 metres</small></div>
+          <span className="coverage-icon">Pilot</span>
+          <div><strong>Illustrative pilot</strong><small>10 simulated nodes</small></div>
         </div>
-        <div className="sidebar-foot"><span className="pulse-dot" /><div><strong>100 / 100 online</strong><small>Network operating normally</small></div></div>
+        <div className="sidebar-foot"><span className="pulse-dot" /><div><strong>10 / 10 simulated</strong><small>Illustrative network snapshot</small></div></div>
       </aside>
 
       <main className="workspace">
@@ -153,11 +103,7 @@ export default function Home() {
         </header>
 
         {page === "overview" && <Overview period={period} dispatch={dispatch} navigate={navigate} selectNode={setSelectedId} moveDispatch={moveDispatch} />}
-        {page === "map" && <RiskMap
-          selected={selected} selectNode={setSelectedId} visibleNodes={visibleNodes} riskFilter={riskFilter} setRiskFilter={setRiskFilter}
-          mapMode={mapMode} setMapMode={setMapMode} zoom={zoom} setZoom={setZoom} offset={offset} setOffset={setOffset}
-          dragOrigin={dragOrigin} setDragOrigin={setDragOrigin} onPointerMove={onPointerMove} dispatch={dispatch} moveDispatch={moveDispatch}
-        />}
+        {page === "map" && <RiskMap selected={selected} selectNode={setSelectedId} visibleNodes={visibleNodes} riskFilter={riskFilter} setRiskFilter={setRiskFilter} mapMode={mapMode} setMapMode={setMapMode} dispatch={dispatch} moveDispatch={moveDispatch} />}
         {page === "zones" && <PriorityZones dispatch={dispatch} moveDispatch={moveDispatch} openMap={(id) => { setSelectedId(id); navigate("map"); }} />}
         {page === "devices" && <DeviceNetwork query={deviceQuery} setQuery={setDeviceQuery} devices={searchedDevices} selected={selected} selectNode={setSelectedId} openMap={() => navigate("map")} />}
       </main>
@@ -187,7 +133,7 @@ function Overview({ period, dispatch, navigate, selectNode, moveDispatch }: { pe
       <Metric label="Priority zones" value={String(counts.Critical + counts.High)} detail={`${counts.Critical} critical · ${counts.High} high`} accent="red" />
       <Metric label="Egg activity" value="+37%" detail={`${period} network change`} accent="black" />
       <Metric label="Fogging operations" value="6" detail="Recommended now" accent="green" />
-      <Metric label="Network coverage" value="1 km²" detail="100 nodes · 100 m spacing" accent="cyan" />
+      <Metric label="Pilot network" value="10 nodes" detail="Illustrative Klang Valley area" accent="cyan" />
     </section>
 
     <section className="overview-grid">
@@ -209,8 +155,8 @@ function Overview({ period, dispatch, navigate, selectNode, moveDispatch }: { pe
     </section>
 
     <section className="card network-strip">
-      <div><p className="eyebrow">Dense early-warning layer</p><h2>100 solar nodes, spaced every 100 metres</h2><p>Wingbeat detection confirms Aedes presence. Vision AI counts eggs. Temperature and humidity reveal the microclimate conditions behind reproduction surges.</p></div>
-      <div className="network-viz">{Array.from({ length: 50 }, (_, i) => <span key={i} className={i % 17 === 0 ? "hot" : i % 7 === 0 ? "warm" : ""} />)}</div>
+      <div><p className="eyebrow">Illustrative early-warning layer</p><h2>10 simulated pilot nodes in one geographic area</h2><p>Illustrative egg, temperature and humidity signals show how a targeted response workflow could be reviewed. This map is a simulated pilot scenario.</p></div>
+      <div className="network-viz">{Array.from({ length: 10 }, (_, i) => <span key={i} className={i % 7 === 0 ? "hot" : i % 4 === 0 ? "warm" : ""} />)}</div>
       <button className="secondary-button" onClick={() => navigate("devices")}>Inspect network</button>
     </section>
   </div>;
@@ -218,14 +164,11 @@ function Overview({ period, dispatch, navigate, selectNode, moveDispatch }: { pe
 
 type RiskMapProps = {
   selected: NodeData; selectNode: (id: string) => void; visibleNodes: NodeData[]; riskFilter: "All" | Risk; setRiskFilter: (risk: "All" | Risk) => void;
-  mapMode: "Risk" | "Network"; setMapMode: (mode: "Risk" | "Network") => void; zoom: number; setZoom: (zoom: number) => void;
-  offset: { x: number; y: number }; setOffset: (offset: { x: number; y: number }) => void;
-  dragOrigin: { x: number; y: number; ox: number; oy: number } | null; setDragOrigin: (value: { x: number; y: number; ox: number; oy: number } | null) => void;
-  onPointerMove: (event: PointerEvent<HTMLDivElement>) => void; dispatch: Record<string, DispatchState>; moveDispatch: (id: string) => void;
+  mapMode: "Risk" | "Network"; setMapMode: (mode: "Risk" | "Network") => void; dispatch: Record<string, DispatchState>; moveDispatch: (id: string) => void;
 };
 
 function RiskMap(props: RiskMapProps) {
-  const { selected, selectNode, visibleNodes, riskFilter, setRiskFilter, mapMode, setMapMode, zoom, setZoom, offset, setOffset, setDragOrigin, onPointerMove, dispatch, moveDispatch } = props;
+  const { selected, selectNode, visibleNodes, riskFilter, setRiskFilter, mapMode, setMapMode, dispatch, moveDispatch } = props;
   return <div className="map-page">
     <section className="map-controls card">
       <div className="segmented"><button className={mapMode === "Risk" ? "active" : ""} onClick={() => setMapMode("Risk")}>Risk view</button><button className={mapMode === "Network" ? "active" : ""} onClick={() => setMapMode("Network")}>Network view</button></div>
@@ -233,16 +176,7 @@ function RiskMap(props: RiskMapProps) {
       <span className="node-count">{visibleNodes.length} nodes visible</span>
     </section>
     <section className="map-detail-grid">
-      <div className="interactive-map card" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setDragOrigin({ x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y }); }} onPointerMove={onPointerMove} onPointerUp={() => setDragOrigin(null)} onPointerCancel={() => setDragOrigin(null)}>
-        <div className="map-stage" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
-          <div className="map-road r1" /><div className="map-road r2" /><div className="map-road r3" /><div className="map-road r4" />
-          <div className="map-label l1">North residential</div><div className="map-label l2">Market district</div><div className="map-label l3">Community park</div>
-          {visibleNodes.map((node) => <button key={node.id} className={`network-node ${mapMode.toLowerCase()} ${node.risk.toLowerCase()} ${selected.id === node.id ? "selected" : ""}`} style={{ left: `${node.x}%`, top: `${node.y}%` }} onPointerDown={(event) => { event.stopPropagation(); selectNode(node.id); }} aria-label={`${node.id}, ${node.location}, risk ${node.score}`} title={`${node.id} · ${node.score}`}><span>{mapMode === "Risk" ? node.score : ""}</span></button>)}
-        </div>
-        <div className="map-zoom"><button onClick={() => setZoom(Math.min(2.5, zoom + .25))} aria-label="Zoom in">+</button><button onClick={() => setZoom(Math.max(.75, zoom - .25))} aria-label="Zoom out">−</button><button onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }); }} aria-label="Reset map">R</button></div>
-        <div className="scale-bar"><span />100 m</div>
-        <div className="map-legend"><span><i className="critical" />Critical</span><span><i className="high" />High</span><span><i className="elevated" />Elevated</span><span><i className="watch" />Watch</span></div>
-      </div>
+      <div className="interactive-map card"><OviZeroRiskMap nodes={nodes} visibleNodes={visibleNodes} selectedId={selected.id} mapMode={mapMode} onSelectNode={selectNode} /></div>
       <aside className="node-panel card">
         <div className="node-panel-top"><div><p className="eyebrow">Selected node</p><h2>{selected.id}</h2><p>{selected.location}</p></div><RiskBadge risk={selected.risk} /></div>
         <div className="hero-score"><div><span>{selected.score}</span><small>/100</small></div><strong>Reproduction-surge risk</strong></div>
@@ -275,7 +209,7 @@ function PriorityZones({ dispatch, moveDispatch, openMap }: { dispatch: Record<s
 function DeviceNetwork({ query, setQuery, devices, selected, selectNode, openMap }: { query: string; setQuery: (value: string) => void; devices: NodeData[]; selected: NodeData; selectNode: (id: string) => void; openMap: () => void }) {
   return <div className="device-layout">
     <section className="device-table-card card">
-      <div className="device-toolbar"><div><p className="eyebrow">100 m sensor grid</p><h2>OviZero nodes</h2></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search node or location" aria-label="Search devices" /></div>
+      <div className="device-toolbar"><div><p className="eyebrow">Illustrative pilot network</p><h2>OviZero nodes</h2></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search node or location" aria-label="Search devices" /></div>
       <div className="device-table" role="table"><div className="device-row header" role="row"><span>Node</span><span>Location</span><span>Risk</span><span>Eggs</span><span>Battery</span><span>LoRaWAN</span></div>{devices.map((node) => <button className={`device-row ${selected.id === node.id ? "selected" : ""}`} key={node.id} onClick={() => selectNode(node.id)} role="row"><strong>{node.id}</strong><span>{node.location}</span><span><RiskBadge risk={node.risk} /></span><strong>{node.eggs}</strong><span>{node.battery}%</span><span className={`signal ${node.signal.toLowerCase()}`}>{node.signal}</span></button>)}</div>
     </section>
     <aside className="device-detail card"><p className="eyebrow">Device diagnostics</p><h2>{selected.id}</h2><p>{selected.location}</p><div className="device-ring" style={{ "--battery": `${selected.battery * 3.6}deg` } as React.CSSProperties}><span>{selected.battery}%</span><small>Battery</small></div>

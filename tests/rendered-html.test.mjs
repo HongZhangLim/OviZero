@@ -13,7 +13,7 @@ test("exports the interactive OviZero operations dashboard", async () => {
   assert.match(html, /91/);
   assert.match(html, /Critical/i);
   assert.match(html, /Targeted fogging/i);
-  assert.match(html, /100 nodes/i);
-  assert.match(html, /100 metres/i);
-  assert.doesNotMatch(html, /codex-preview|SkeletonPreview|PPR Seri Anggerik|simulated|illustrative|public health alert/i);
+  assert.match(html, /10 simulated pilot nodes/i);
+  assert.match(html, /simulated pilot scenario/i);
+  assert.doesNotMatch(html, /codex-preview|SkeletonPreview|PPR Seri Anggerik|public health alert/i);
 });

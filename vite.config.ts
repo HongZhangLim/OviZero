@@ -51,6 +51,11 @@ export default defineConfig(async () => {
 
   return {
     base: githubPagesBase,
+    define: {
+      "process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": JSON.stringify(
+        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+      ),
+    },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
